@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GitHub Repo Visualization</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #74ABE2, #5563DE);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 1px 0;
+    }
+    header .navbar-brand {
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+    .container {
+      margin-top: 30px;
+      margin-bottom: 30px;
+    }
+    .card {
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .card-header {
+      background-color: #5563DE;
+      color: #fff;
+      font-size: 1.25rem;
+      text-align: center;
+      padding: 15px;
+    }
+    .card-body {
+      background-color: #fff;
+      padding: 30px;
+    }
+    .form-control, .form-select {
+      border-radius: 50px;
+      padding: 15px;
+      font-size: 1rem;
+    }
+    .btn-primary {
+      border-radius: 50px;
+      padding: 12px 25px;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+    .btn-primary:hover {
+      background-color: #3a48c0;
+    }
+    #visualizationContainer {
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      min-height: 300px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      margin-top: 20px;
+      animation: fadeIn 1s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Toggle file selection transition */
+    #fileSelection {
+      transition: all 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header>
+    <nav class="navbar container">
+      <a class="navbar-brand" href="#"><i class="fa-solid fa-code"></i> RepoViz</a>
+    </nav>
+  </header>
+  
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">
+            <i class="fa-solid fa-diagram-project me-2"></i>GitHub Repo Visualization
+          </div>
+          <div class="card-body">
+            <form id="repoForm">
+              <!-- GitHub URL Input -->
+              <div class="mb-4">
+                <label for="repoUrl" class="form-label">GitHub Repository URL</label>
+                <input type="url" class="form-control" id="repoUrl" placeholder="https://github.com/username/repo" required>
+              </div>
+              
+              <!-- Visualization Type Options -->
+              <div class="mb-4">
+                <label class="form-label">Visualization Type</label>
+                <div class="d-flex gap-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="vizType" id="wholeRepo" value="whole" checked>
+                    <label class="form-check-label" for="wholeRepo">
+                      <i class="fa-solid fa-boxes-stacked me-1"></i>Whole Repository
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="vizType" id="individualFile" value="file">
+                    <label class="form-check-label" for="individualFile">
+                      <i class="fa-solid fa-file-lines me-1"></i>Individual File/Folder
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- File/Folder Selection (hidden by default) -->
+              <div class="mb-4" id="fileSelection" style="display: none;">
+                <label for="fileList" class="form-label">Select File or Folder</label>
+                <select class="form-select" id="fileList">
+                  <option value="">Choose a file/folder</option>
+                  <!-- Options to be populated dynamically -->
+                </select>
+              </div>
+              
+              <!-- Submit Button -->
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa-solid fa-play me-2"></i>Visualize
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        
+        <!-- Visualization Output Section -->
+        <div id="visualizationContainer" class="mt-5">
+          <!-- Visualization HTML will be injected here -->
+          <div class="text-center text-muted">
+            <i class="fa-regular fa-image fa-3x"></i>
+            <p class="mt-3">Your visualization will appear here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const repoForm = document.getElementById('repoForm');
+      const vizTypeRadios = document.getElementsByName('vizType');
+      const fileSelectionDiv = document.getElementById('fileSelection');
+      
+      // Toggle file selection based on visualization type choice
+      vizTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function () {
+          if (document.getElementById('individualFile').checked) {
+            fileSelectionDiv.style.display = 'block';
+            // Add logic to dynamically populate file/folder options if needed.
+          } else {
+            fileSelectionDiv.style.display = 'none';
+          }
+        });
+      });
+      
+      // Handle form submission
+      repoForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const repoUrl = document.getElementById('repoUrl').value;
+        const vizType = document.querySelector('input[name="vizType"]:checked').value;
+        const selectedFile = document.getElementById('fileList').value;
+        
+        // For demonstration purposes, simulate a backend response with placeholder HTML.
+        // Replace this with an actual request to your backend service.
+        const visualizationHTML = `
+          <div class="text-center">
+            <h4 class="mb-3">Workflow Diagram</h4>
+            <p><strong>Repository:</strong> ${repoUrl}</p>
+            <p><strong>Visualization Type:</strong> ${vizType === 'whole' ? 'Whole Repository' : 'Individual File/Folder'}</p>
+            ${selectedFile ? `<p><strong>Selected:</strong> ${selectedFile}</p>` : ''}
+          </div>
+          <hr>
+          <div class="text-center">
+            <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+            <p>Diagram processing... (placeholder)</p>
+          </div>
+        `;
+        
+        document.getElementById('visualizationContainer').innerHTML = visualizationHTML;
+      });
+    });
+  </script>
+</body>
+</html>
