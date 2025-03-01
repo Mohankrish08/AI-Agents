@@ -7,7 +7,7 @@ from config import GptService
 
 class GitConfig():
 
-    def __init__(self, github_url, gpt_service: GptService):
+    def __init__(self, github_url, gpt_service=GptService):
         #super().__init__()
         self.gpt_service = gpt_service
         self.github_url = github_url
