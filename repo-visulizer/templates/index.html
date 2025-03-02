@@ -4,15 +4,17 @@
   <meta charset="UTF-8">
   <title>GitHub Repo Visualization</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="https://static-00.iconduck.com/assets.00/github-icon-256x256-0cytpfer.png" sizes="40x40" type="/png">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome for icons -->
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
+  <!-- Lottie files -->
+  <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>  <style>
     body {
       font-family: 'Roboto', sans-serif;
       background: linear-gradient(135deg, #74ABE2, #5563DE);
@@ -38,7 +40,6 @@
       border: none;
       border-radius: 10px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      overflow: hidden;
     }
     .card-header {
       background-color: #5563DE;
@@ -46,10 +47,6 @@
       font-size: 1.25rem;
       text-align: center;
       padding: 15px;
-    }
-    .card-body {
-      background-color: #fff;
-      padding: 30px;
     }
     .form-control, .form-select {
       border-radius: 50px;
@@ -60,10 +57,6 @@
       border-radius: 50px;
       padding: 12px 25px;
       font-weight: 500;
-      transition: background-color 0.3s ease;
-    }
-    .btn-primary:hover {
-      background-color: #3a48c0;
     }
     #visualizationContainer {
       background-color: #fff;
@@ -72,32 +65,40 @@
       min-height: 300px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.1);
       margin-top: 20px;
-      animation: fadeIn 1s ease;
+      animation: fadeIn 0.8s ease;
+      max-width: 100%;
+      overflow-x: auto;
     }
+    #visualizationContainer img {
+      max-width: 100%;
+      height: auto;
+    }
+    #loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(5px); /* Blurs background content */
+    background: rgba(255, 255, 255, 0.5); /* Semi-transparent tint */
+    z-index: 10000; /* Make sure it sits on top */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    /* Toggle file selection transition */
-    #fileSelection {
-      transition: all 0.3s ease;
-    }
   </style>
 </head>
 <body>
-  <!-- Navigation Header -->
-  <header>
-    <nav class="navbar container">
-      <a class="navbar-brand" href="#"><i class="fa-solid fa-code"></i> RepoViz</a>
-    </nav>
-  </header>
-  
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-8">
         <div class="card">
           <div class="card-header">
-            <i class="fa-solid fa-diagram-project me-2"></i>GitHub Repo Visualization
+            <i class="fa-solid fa-diagram-project me-2"></i> GitHub Repo Visualization
           </div>
           <div class="card-body">
             <form id="repoForm">
@@ -106,104 +107,302 @@
                 <label for="repoUrl" class="form-label">GitHub Repository URL</label>
                 <input type="url" class="form-control" id="repoUrl" placeholder="https://github.com/username/repo" required>
               </div>
-              
-              <!-- Visualization Type Options -->
-              <div class="mb-4">
-                <label class="form-label">Visualization Type</label>
-                <div class="d-flex gap-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="vizType" id="wholeRepo" value="whole" checked>
-                    <label class="form-check-label" for="wholeRepo">
-                      <i class="fa-solid fa-boxes-stacked me-1"></i>Whole Repository
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="vizType" id="individualFile" value="file">
-                    <label class="form-check-label" for="individualFile">
-                      <i class="fa-solid fa-file-lines me-1"></i>Individual File/Folder
-                    </label>
+
+              <!-- ENTER Button -->
+              <div class="d-grid" id="git-submit">
+                <button type="button" class="btn btn-primary" id="enterBtn">
+                  <i class="fa-solid fa-play me-2"></i> Enter
+                </button>
+              </div>
+
+              <!-- Visualization Options (Initially Hidden) -->
+              <div id="visualizationOptions" style="display: none; margin-top: 20px;">
+                <div class="mb-4">
+                  <label class="form-label">Visualization Type</label>
+                  <div class="d-flex gap-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="vizType" id="wholeRepo" value="whole" checked>
+                      <label class="form-check-label" for="wholeRepo">
+                        <i class="fa-solid fa-boxes-stacked me-1"></i> Whole Repository
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="vizType" id="individualFile" value="file">
+                      <label class="form-check-label" for="individualFile">
+                        <i class="fa-solid fa-file-lines me-1"></i> Individual File
+                      </label>
+                    </div>
+                    <div class="form-check" style="display: none;">
+                      <input class="form-check-input" type="radio" name="vizType" id="individualFolder" value="folder">
+                      <label class="form-check-label" for="individualFolder">
+                        <i class="fa-solid fa-folder me-1"></i> Individual Folder
+                      </label>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <!-- File/Folder Selection (hidden by default) -->
-              <div class="mb-4" id="fileSelection" style="display: none;">
-                <label for="fileList" class="form-label">Select File or Folder</label>
-                <select class="form-select" id="fileList">
-                  <option value="">Choose a file/folder</option>
-                  <!-- Options to be populated dynamically -->
-                </select>
-              </div>
-              
-              <!-- Submit Button -->
-              <div class="d-grid">
-                <button type="submit" class="btn btn-primary">
-                  <i class="fa-solid fa-play me-2"></i>Visualize
-                </button>
+
+                <!-- Folder Dropdown (Initially Hidden) -->
+                <div class="mb-4" id="folderSelection" style="display: none;">
+                  <label for="folderDropdown" class="form-label">Select Folder</label>
+                  <select class="form-control" id="folderDropdown">
+                    <option value="">Select a folder...</option>
+                    <option value="src">src</option>
+                    <option value="docs">docs</option>
+                    <option value="tests">tests</option>
+                    <option value="assets">assets</option>
+                  </select>
+                </div>
+
+                <div class="mb-4" id="fileSelection" style="display: none;">
+                  <label for="folderDropdown" class="form-label">Select File</label>
+                  <select class="form-control" id="fileDropdown">
+                    <option value="">Select a folder...</option>
+                    {% for file in repo_files %}
+                      <option value="{{ file }}">{{file}}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <!-- Visualize Button -->
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-primary" id="visulize-btn">
+                    <i class="fa-solid fa-play me-2"></i> Visualize
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
-        
-        <!-- Visualization Output Section -->
+
+        <!-- Visualization Output -->
         <div id="visualizationContainer" class="mt-5">
-          <!-- Visualization HTML will be injected here -->
           <div class="text-center text-muted">
             <i class="fa-regular fa-image fa-3x"></i>
             <p class="mt-3">Your visualization will appear here.</p>
           </div>
         </div>
-      </div>
+      </div>  
     </div>
   </div>
-  
-  <!-- Bootstrap Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Custom JavaScript -->
+
+  <!-- JavaScript -->
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const repoForm = document.getElementById('repoForm');
-      const vizTypeRadios = document.getElementsByName('vizType');
-      const fileSelectionDiv = document.getElementById('fileSelection');
-      
-      // Toggle file selection based on visualization type choice
-      vizTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function () {
-          if (document.getElementById('individualFile').checked) {
+
+// ***************************************** GitHub repo ***********************************************
+
+      //document.getElementById('fileSelection').style.display = 'block';
+    
+      document.addEventListener('DOMContentLoaded', function() {
+        let wholeRepoRadio = document.getElementById('wholeRepo');
+        let individualFileRadio = document.getElementById('individualFile');
+        let fileSelectionDiv = document.getElementById('fileSelection');
+
+        function toggleDropDown() {
+          if (individualFileRadio.checked) {
             fileSelectionDiv.style.display = 'block';
-            // Add logic to dynamically populate file/folder options if needed.
           } else {
             fileSelectionDiv.style.display = 'none';
           }
+        }
+
+        document.querySelectorAll('input[name="vizType"]').forEach((radio) => {
+          radio.addEventListener('change', function () {
+            toggleDropDown();
+          });
         });
+
+        toggleDropDown();
       });
-      
-      // Handle form submission
-      repoForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const repoUrl = document.getElementById('repoUrl').value;
-        const vizType = document.querySelector('input[name="vizType"]:checked').value;
-        const selectedFile = document.getElementById('fileList').value;
+    
+
+    document.getElementById('enterBtn').addEventListener('click', function() {
+        console.log("✅ Enter button was clicked!");
+        let repoUrl = document.getElementById('repoUrl').value;
+        console.log("Entered GitHub Repository URL:", repoUrl);
+        const overlay = document.createElement('div');
+        overlay.id = 'loadingOverlay';
+        overlay.innerHTML = `
+        <div class="text-center">
+          <dotlottie-player 
+            src="https://lottie.host/c4594ca6-c738-4764-87dd-d09dcb41050e/AeVePdK22Z.lottie" 
+            background="transparent" 
+            speed="1" 
+            style="width: 300px; height: 300px;" 
+            loop 
+            autoplay>
+          </dotlottie-player>
+          <p>Loading...</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+        fetch('/get-github', {
+          method: 'POST',
+          headers: {
+                    'Content-Type': 'application/json',
+              },
+          body: JSON.stringify({url:repoUrl})
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Response from server: ', data);
+
+          if (data.files && data.files.length > 0) {
+            let fileDropdown = document.getElementById('fileDropdown');
+            fileDropdown.innerHTML = '<option value="">Select a file...</option>'; // Reset dropdown
+
+            data.files.forEach(file => {
+              let option = document.createElement('option');
+              option.value = file;
+              option.textContent = file;
+              fileDropdown.appendChild(option);
+            });
+
+            // Only show the file dropdown if the "individual file" option is selected
+            const selectedViz = document.querySelector('input[name="vizType"]:checked').value;
+            if (selectedViz === 'file') {
+              document.getElementById('fileSelection').style.display = 'block';
+            } else {
+              document.getElementById('fileSelection').style.display = 'none';
+            }
+        } else {
+            console.log("⚠️ No files found in the repository.");
+        }
+          
+        })
+        .catch(error => {
+          console.log('Error: ', error)
+        })
+        .finally(() => {
+          document.body.removeChild(overlay);
+        })
+    });
+
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const enterBtn = document.getElementById('enterBtn');
+      const vizEnterBtn = document.getElementById('visulize-btn');
+      const wholeRepo = document.getElementById('wholeRepo');
+      const repoUrlInput = document.getElementById('repoUrl');
+      const visualizationOptions = document.getElementById('visualizationOptions');
+      const folderSelection = document.getElementById('folderSelection');
+      const fileSelection = document.getElementById('fileSelection');
+      const repoForm = document.getElementById('repoForm');
+
+      // Show visualization options after valid URL entry
+      enterBtn.addEventListener('click', function () {
+        const repoUrl = repoUrlInput.value.trim();
+        console.log('repourl: ', repoUrl);
+
+
+        if (!repoUrl) {
+          alert("⚠️ Please enter a valid GitHub repository URL.");
+          return;
+        }
+
+        visualizationOptions.style.display = 'block';
+      });
+
+      vizEnterBtn.addEventListener('click', function() {
+        const fileVal = fileDropdown.value
+        const isChecked = wholeRepo.checked
+        console.log('FileName: ', fileVal);
+        console.log('Whole: ', isChecked);
+
+        const repoUrl = repoUrlInput.value.trim();
+
+        selectVizFile = {githubUrl: repoUrl ,isWhole: isChecked, files: fileVal}
         
-        // For demonstration purposes, simulate a backend response with placeholder HTML.
-        // Replace this with an actual request to your backend service.
-        const visualizationHTML = `
+        console.log('selected: ', selectVizFile)
+        
+
+        document.getElementById('visualizationContainer').innerHTML = `
           <div class="text-center">
-            <h4 class="mb-3">Workflow Diagram</h4>
-            <p><strong>Repository:</strong> ${repoUrl}</p>
-            <p><strong>Visualization Type:</strong> ${vizType === 'whole' ? 'Whole Repository' : 'Individual File/Folder'}</p>
-            ${selectedFile ? `<p><strong>Selected:</strong> ${selectedFile}</p>` : ''}
-          </div>
-          <hr>
-          <div class="text-center">
-            <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-            <p>Diagram processing... (placeholder)</p>
+            <dotlottie-player 
+              class="mx-auto d-block"
+              src="https://lottie.host/a0259e34-2322-4d0c-a185-221cc997feb5/B4dgWqsD94.lottie" 
+              background="transparent" 
+              speed="1" 
+              style="width: 300px; height: 300px;" 
+              loop 
+              autoplay>
+            </dotlottie-player>
+            <p>Loading...</p>
           </div>
         `;
+
         
-        document.getElementById('visualizationContainer').innerHTML = visualizationHTML;
+        fetch('/visulize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(selectVizFile)
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Response from server: ', data)
+          document.getElementById('visualizationContainer').innerHTML = data.html;
+        })
+        .catch(error => {
+          console.log('Error: ', error)
+        })
+
+
+      })
+
+      // Show/Hide Folder Dropdown on Selection
+      document.querySelectorAll('input[name="vizType"]').forEach((radio) => {
+        radio.addEventListener('change', function () {
+          if (this.value === 'folder') {
+            folderSelection.style.display = 'block';
+            fileSelection.style.display = 'none'  
+          } else if (this.value == 'file') {
+            fileSelection.style.display ='block';
+            folderSelection.style.display = 'none';
+          }
+          else {
+            folderSelection.style.display = 'none';
+            fileSelection.style.display = 'none'
+          }
+        });
       });
+
+      // Prevent visualization without valid URL
+      repoForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const repoUrl = repoUrlInput.value.trim();
+        const vizType = document.querySelector('input[name="vizType"]:checked').value;
+        const selectedFolder = document.getElementById('folderDropdown').value;
+
+        if (!repoUrl) {
+          alert("⚠️ Enter a repository URL first!");
+          return;
+        }
+
+        if (vizType === 'folder' && !selectedFolder) {
+          alert("⚠️ Please select a folder.");
+          return;
+        }
+
+        
+
+        // document.getElementById('visualizationContainer').innerHTML = `
+        //   <div class="text-center">
+        //     <h4>Visualization for:</h4>
+        //     <p><strong>Repo:</strong> ${repoUrl}</p>
+        //     <p><strong>Type:</strong> ${vizType}</p>
+        //     ${vizType === 'folder' ? `<p><strong>Folder:</strong> ${selectedFolder}</p>` : ''}
+        //     <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+        //     <p>Generating visualization...</p>
+        //   </div>
+        // `;
+      });
+      
     });
   </script>
 </body>
+
+
 </html>
