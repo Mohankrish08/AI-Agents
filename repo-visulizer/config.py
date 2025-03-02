@@ -1,4 +1,5 @@
 import openai 
+import tiktoken
 import time 
 import os
 import json 
@@ -69,7 +70,7 @@ class PromptTemplate:
 
         You are provided with a set of code files. Your task is to:
         - Thoroughly analyze the code and provide a detailed, step-by-step workflow diagram showing how the entire codebase functions.
-        - Present the output in **HTML format** with a **top-to-bottom branching workflow diagram**.
+        - Present the output in **HTML format** with a **top-to-bottom branching workflow diagram** with explanation.
 
         **Instructions:**
         - Provide a **clear, neatly formatted flowchart** that visually represents the code's logic and branching structure.
@@ -81,11 +82,16 @@ class PromptTemplate:
         - Ensure a **top-to-bottom approach** with clear branches for better visualization.
         - **Avoid straight or linear diagrams**—use branching lines to illustrate various possible paths and decisions.
         - **Do not use circular or rounded shapes** for nodes; use rectangular boxes for clarity.
+        - While writing the HTML, if i hover the nodes, it should explain about that, in a interactive way. Strictly write code for that.
+        - STRICTLY provide with neat branching structure.
+        - STIRCLTY Provide some colors for the boxes only and hover function!!
+
 
         **This is my code:**
         - Your diagram should accurately represent how the code works, covering all branches and possible conditions.
         - Focus on creating a **branching structure** that allows for **easy understanding of conditional flows and process sequences**.
         - STRICTLY provide in branching structure like tree, don't provide straight line!!!
+        - Hoving function explaination need to be there for better code understanding and readability.
 
         **Output format:**
         ```diagram
