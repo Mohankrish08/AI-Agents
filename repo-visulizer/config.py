@@ -35,6 +35,11 @@ class GptService:
         except Exception as e:
             return "Error" + e
         
+    def num_tokens_from_string(self, string, encoding_name="cl100k_base"):
+        encoding = tiktoken.get_encoding(encoding_name)
+        num_tokens = len(encoding.encode(string))
+        return num_tokens
+        
 
 class PromptTemplate:
 
@@ -95,6 +100,6 @@ class PromptTemplate:
 
         **Output format:**
         ```diagram
-        <HTML code representing a properly branched workflow structure with clear decision points and process flows>
+        <HTML code representing a properly branched workflow structure with clear decision points and process flows, provide good documentation for that code.>
         ```diagram
         """

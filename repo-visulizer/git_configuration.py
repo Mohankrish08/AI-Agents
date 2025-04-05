@@ -54,11 +54,16 @@ class GitConfig():
             result = []
             exceed = []
             for i in files:
+                print("looping")
                 file_content = self.get_file_content(i)
-                file_tkn_cnt = self.gpt_service.num_tokens_from_string(file_content)
+                print("File content working")
+                print(file_content)
+                file_tkn_cnt = self.gpt_service.num_tokens_from_string(str(file_content))
+                print("File tkns")
                 if file_tkn_cnt < 50000 and tkn_cnt <= 120000:
                     tkn_cnt += self.gpt_service.num_tokens_from_string(file_content)
                     result.append({i: file_content})
+                    print("Added: ", i)
                 else:
                     exceed.append(i)
             return result, exceed
